@@ -2,20 +2,16 @@ import "./styles.css";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
+import L from "leaflet";
+import "leaflet-routing-machine";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 
-import { Icon } from "leaflet";
+import LeafletRoutingMachine from "./LeafletRoutingMachine";
 
-// create custom icon
-const customIcon = new Icon({
-  iconUrl: require("./icons/placeholder.png"),
-  iconSize: [18, 18],
-});
-
-// markers
-
-export default function App() {
+const App = () => {
   const [markers, setMarkers] = useState([]);
   const [viewMode, setViewMode] = useState("map");
+  const [startView, setStartView] = useState(false); // New state for tracking start
 
   useEffect(() => {
     const fetchCoordinates = async () => {
@@ -26,9 +22,7 @@ export default function App() {
           geocode: [item.latitude, item.longitude],
           popUp: `Date: ${item.date}, Device ID: ${item.idDevice}`,
         }));
-
         setMarkers(mappedMarkers);
-        // setMarkers(mappedMarkers);
       } catch (error) {
         console.error("Error fetching coordinates:", error);
       }
@@ -37,19 +31,15 @@ export default function App() {
     fetchCoordinates();
   }, []);
 
-  useEffect(() => {
-    console.log(markers);
-  }, [markers]);
-
   return (
     <>
       <div className="button-container">
         <button onClick={() => setViewMode("map")}>Map View</button>
         <button onClick={() => setViewMode("satellite")}>Satellite View</button>
+        <button onClick={() => setStartView(true)}>Start view</button>
       </div>
 
       <MapContainer center={[35.62224166666667, 10.737660000000002]} zoom={16}>
-        OPEN STREEN MAPS TILES
         {viewMode === "map" && (
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -59,22 +49,29 @@ export default function App() {
         {viewMode === "satellite" && (
           <TileLayer
             attribution="Google Maps"
-            url="http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}" // satellite
+            url="http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"
             maxZoom={20}
             subdomains={["mt0", "mt1", "mt2", "mt3"]}
           />
         )}
-        {/* WATERCOLOR CUSTOM TILES */}
-        <TileLayer
-          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
-        />
+        <LeafletRoutingMachine markers={markers} onStartRoute={startView} />
+        start View
         {markers.map((marker, index) => (
-          <Marker key={index} position={marker.geocode} icon={customIcon}>
+          <Marker key={index} position={marker.geocode} icon={DefaultIcon}>
             <Popup>{marker.popUp}</Popup>
           </Marker>
         ))}
       </MapContainer>
     </>
   );
-}
+};
+
+let DefaultIcon = L.icon({
+  iconUrl: "/marker-icon.png",
+  iconSize: [25, 41],
+  iconAnchor: [10, 41],
+  popupAnchor: [2, -40],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+export default App;
