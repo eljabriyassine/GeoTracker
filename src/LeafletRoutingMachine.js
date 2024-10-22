@@ -17,11 +17,14 @@ const LeafletRoutingMachine = ({ markers, onStartRoute }) => {
 
   const StartRoute = () => {
     if (markers.length === 0) return;
-    var marker1 = L.marker([35.62224166666667, 10.737660000000002], {
+
+    const marker1 = L.marker([35.62224166666667, 10.737660000000002], {
       icon: taxiIcon,
     }).addTo(map);
 
-    L.Routing.control({
+    const fixedZoomLevel = map.getZoom();
+
+    const routeControl = L.Routing.control({
       waypoints: [
         L.latLng(35.62224166666667, 10.737660000000002),
         L.latLng(35.62457833333334, 10.760291666666667),
@@ -45,7 +48,13 @@ const LeafletRoutingMachine = ({ markers, onStartRoute }) => {
       .on("routesfound", function (e) {
         e.routes[0].coordinates.forEach((c, i) => {
           setTimeout(() => {
-            marker1.setLatLng([c.lat, c.lng]);
+            marker1.setLatLng([c.lat, c.lng]); // Move marker
+
+            // Change map center to follow marker while keeping zoom level
+            map.setView([c.lat, c.lng], fixedZoomLevel, {
+              animate: true,
+              pan: { duration: 1 }, // Smooth pan
+            });
           }, 100 * i);
         });
       })
